@@ -1,8 +1,9 @@
 import os
-
+from pathlib import Path
 
 code_paths = {}
-code_paths["repo_name"] = "p5-stress-classifier"
+repo_name = Path(os.getcwd()).parents[2].name
+code_paths["repo_name"] = repo_name
 code_paths["package_parent_dir"] = "lib"
 
 
