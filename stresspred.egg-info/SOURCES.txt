@@ -1,0 +1,15 @@
+AUTHORS.rst
+CONTRIBUTING.rst
+HISTORY.rst
+LICENSE
+MANIFEST.in
+README.rst
+setup.cfg
+setup.py
+stresspred.egg-info/PKG-INFO
+stresspred.egg-info/SOURCES.txt
+stresspred.egg-info/dependency_links.txt
+stresspred.egg-info/entry_points.txt
+stresspred.egg-info/not-zip-safe
+stresspred.egg-info/requires.txt
+stresspred.egg-info/top_level.txt

@@ -22,6 +22,9 @@
 
 .ipynb_checkpoints
 
+# Package files
+*.egg-info
+
 lib/CritiasStress/ECG-PPG/*
 lib/CritiasStress/LSL/*
 lib/CritiasStress/GUIP3/*
