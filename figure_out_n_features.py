@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # load code in "stresspred" directory like a package
     code_paths = {}
-    code_paths["repo_name"] = "p5-stress-classifier"
+    code_paths["repo_name"] = "in-ear-stress"
 
     code_paths["repo_path"] = os.getcwd()
     base_dir = os.path.basename(code_paths["repo_path"])
