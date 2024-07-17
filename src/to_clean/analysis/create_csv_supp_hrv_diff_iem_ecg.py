@@ -2,7 +2,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
 import json
+import seaborn as sns
 from sklearn.linear_model import LogisticRegression
 from stresspred import (
     AudaceDataLoader,
@@ -35,6 +38,7 @@ list_sig_name_val = ["ECG", "IEML", "ECG-IEMLe"]
 seed = 0
 pipe_clf = make_prediction_pipeline(est=LogisticRegression(random_state=seed, max_iter=1000))
 base_cond = "Without baselining"
+
 out = AudaceDataLoader().get_split_pred_df(
                 selected_tasks=selected_tasks,
                 selected_signals=selected_signals,
@@ -48,46 +52,72 @@ sub = out["sub"]
 task = out["task"]
 signal = out["signal"]
 nk_feats = [col for col in out["X"].columns if "HRV_" in col]
-sig_name_train = "IEML"
-sig_name_val = "IEML"
-sig_names_train = sig_name_train.split(" + ")
-outer_cv, _ = get_cv_iterator(
-    sub,
-    n_outer_splits=5,
-    n_inner_splits=4,
-    train_bool=np.array([True if sig in sig_names_train else False for sig in signal]),
-    val_bool=signal == sig_name_val
-)
-selected_features = expected_columns
-coefs = []
-scores = []
-for train, test in outer_cv:
-    X_train = X.iloc[train].loc[:, selected_features]
-    y_train = y[train]
-    pipe_clf.fit(X_train, y_train)
-    X_test = X.iloc[test].loc[:, selected_features]
-    y_test = y[test]
-    scores.append(pipe_clf.score(X_test, y_test))
-    coefs.append(dict(zip(selected_features, list(pipe_clf.named_steps["estimator"].coef_.flatten()))))
+sig_names_train = ["ECG", "IEML"]
+for sig_name_train in sig_names_train:
+# sig_name_train = "IEML"
+    sig_name_val = "IEML"
+    sig_names_train = sig_name_train.split(" + ")
+    outer_cv, _ = get_cv_iterator(
+        sub,
+        n_outer_splits=5,
+        n_inner_splits=4,
+        train_bool=np.array([True if sig in sig_names_train else False for sig in signal]),
+        val_bool=signal == sig_name_val
+    )
+    selected_features = expected_columns
+    coefs = []
+    scores = []
+    for train, test in outer_cv:
+        X_train = X.iloc[train].loc[:, selected_features]
+        y_train = y[train]
+        pipe_clf.fit(X_train, y_train)
+        X_test = X.iloc[test].loc[:, selected_features]
+        y_test = y[test]
+        scores.append(pipe_clf.score(X_test, y_test))
+        coef_dict = dict(zip(selected_features, list(pipe_clf.named_steps["estimator"].coef_.flatten())))
+        coefs.append(coef_dict)
 
 
-print(np.mean(scores))
-coef_df = pd.DataFrame(coefs)
-coef_df.index.name = "Feature"
-coef_df = pd.melt(coef_df, var_name="Feature", value_name="Coefficient")
-coef_df["Signal train"] = sig_name_train
-coef_df["Signal val"] = sig_name_val
-coef_df["Baselining"] = base_cond
-coef_dfs.append(coef_df)
+    print(np.mean(scores))
+    coef_df = pd.DataFrame(coefs)
+    coef_df.index.name = "Feature"
+    coef_df = pd.melt(coef_df, var_name="Feature", value_name="Coefficient")
+    coef_df["Signal train"] = sig_name_train
+    coef_df["Signal val"] = sig_name_val
+    coef_df["Baselining"] = base_cond
+    coef_dfs.append(coef_df)
 
 coef_df = pd.concat(coef_dfs)
+
+iem_and_ecg_coef_df = coef_df.copy(deep=False)
+coef_df = coef_df[coef_df["Signal train"] == "IEML"]
+
 coef_df["Abs Coef"] = np.abs(coef_df["Coefficient"])
 # Create table of mean and std of coefficients for each feature
 # First compute mean absolute coefficient
 summary = coef_df.groupby(["Feature"])["Abs Coef"].mean().reset_index().sort_values(by="Abs Coef", ascending=False).reset_index()
+order = summary.sort_values(by="Abs Coef", ascending=False)["Feature"].values
 # Then add standard deviation
 std = coef_df.groupby(["Feature"])["Abs Coef"].std().reset_index()
 summary = summary.merge(std, on="Feature", suffixes=(" mean", " std"))
+
+# Plot coefficients for all features
+fig, ax = plt.subplots(figsize=(15, 10))
+# Create boxplot
+sns.boxplot(x="Feature", y="Coefficient", hue="Signal train", data=iem_and_ecg_coef_df, ax=ax, order=order)
+# Rotate x-axis labels
+ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+# Remove "HRV_" from x-axis labels
+ax.set_xticklabels([str(x).split("HRV_")[1].split("'")[0] for x in ax.get_xticklabels()])
+# Add title
+ax.set_title("Coefficients for all features")
+plt.show()
+
+
+# Then add the 75th percentile coefficient
+summary["Coef 75th percentile"] = coef_df.groupby(["Feature"])["Coefficient"].quantile(0.75).reset_index()["Coefficient"]
+# Then add the 25th percentile coefficient
+summary["Coef 25th percentile"] = coef_df.groupby(["Feature"])["Coefficient"].quantile(0.25).reset_index()["Coefficient"]
 
 categories = []
 for feature in summary["Feature"].values:
@@ -96,4 +126,51 @@ for feature in summary["Feature"].values:
 
 summary["Category"] = categories
 output_path = Path(code_paths["repo_path"], "local_data", "feature_importance_lr_train_iem.csv")
-summary[["Feature", "Abs Coef mean", "Abs Coef std", "Category"]].to_csv(output_path, index=True)
+summary[["Feature", "Abs Coef mean", "Abs Coef std", "Category", "Coef 75th percentile", "Coef 25th percentile"]].to_csv(output_path, index=True)
+# select top features by mean absolute coefficient
+top_features = summary["Feature"].values[:4]
+
+abs_df, _ = AudaceDataLoader().get_feat_dfs(save_file=True)
+
+gt_record = abs_df[abs_df["Signal"]=="ECG"]
+record = abs_df[abs_df["Signal"]=="IEML"]
+
+# top_features = ["HRV_MedianNN", "HRV_RMSSD"]
+for hrv_col in top_features:
+     
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True, sharey=True, squeeze=True, figsize=(15, 8))
+
+    dfs_list = []
+
+    conditions = []
+    for cond in np.unique(gt_record["Rest"]):
+        cond_ind = np.where(np.array(record["Rest"]) == cond)[0]
+        cond_ind_gt = np.where(np.array(gt_record["Rest"]) == cond)[0]
+        df = pd.DataFrame(
+            {
+                "Without missing": np.array(gt_record[hrv_col])[cond_ind_gt],
+                "With missing": np.array(record[hrv_col])[cond_ind],
+            }
+        )
+        dfs_list.append(df)
+        conditions.append(cond)
+    colors = {"Rest": "grey", "Stress": "grey"}
+    markers = {"Rest": "o", "Stress": "o"}
+
+    for i in range(len(dfs_list)):
+        
+        df = dfs_list[i]
+        data1 = df["Without missing"]
+        data2 = df["With missing"]
+        sm.graphics.mean_diff_plot(data1, data2, ax=axs[i])
+        
+        axs[i].set(
+            xlabel="Mean of ECG and IEM",
+            ylabel="Difference between ECG and IEM",
+        )
+        axs[i].set_title(label= conditions[i] + " conditions", fontsize=20)
+    
+    only_feature_name = hrv_col.split("HRV_")[1]
+    plt.suptitle(only_feature_name, fontsize=20)
+    plt.tight_layout()
+    plt.show()

@@ -4,7 +4,6 @@ from pathlib import Path
 code_paths = {}
 current_file_path = os.path.abspath(__file__)
 repo_name = Path(current_file_path).parents[3].name
-print(repo_name)
 code_paths["repo_name"] = repo_name
 code_paths["package_parent_dir"] = "lib"
 
