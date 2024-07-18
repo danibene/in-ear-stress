@@ -13,7 +13,7 @@ class TestStressBioDataLoader:
         rest = ["Rest", "Stress"]
         sub_seg_idxs = [1]
         duration = 180
-        seg_dicts = []
+        seg_dfs = []
         random_state = 0
         for signal in signals:
             for participant in participants:
@@ -39,9 +39,10 @@ class TestStressBioDataLoader:
                                 "Ibi": rri,
                                 "IbiTime": rri_time,
                             }
-                            seg_dicts.append(seg_dict)
+                            seg_df = pd.DataFrame.from_dict(seg_dict)
+                            seg_dfs.append(seg_df)
 
-        ibi_df = pd.DataFrame(seg_dicts)
+        ibi_df = pd.merge(seg_dfs)
         return ibi_df
 
     def test_get_base_feat_df(self):
