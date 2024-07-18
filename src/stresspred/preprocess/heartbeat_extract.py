@@ -36,8 +36,7 @@ def hb_extract(
 ):
 
     if sig_time is None:
-        sig_time = sampling_rate_to_sig_time(
-            sig=sig, sampling_rate=sampling_rate)
+        sig_time = sampling_rate_to_sig_time(sig=sig, sampling_rate=sampling_rate)
     else:
         sampling_rate = sig_time_to_sampling_rate(sig_time=sig_time)
     sig, sig_time = drop_missing(sig, sig_time=sig_time)
@@ -90,13 +89,13 @@ def hb_extract(
             bin_peak_sig = processed[0][bin_peak_col].values
         else:
             bin_peak_sig = sig
-        peak_as_one = np.array(
-            bin_peak_sig / np.nanmax(bin_peak_sig)).astype(int)
+        peak_as_one = np.array(bin_peak_sig / np.nanmax(bin_peak_sig)).astype(int)
         peak_samp = np.where(peak_as_one == 1)[0]
         peak_time = samp_to_timestamp(
             samp=peak_samp, sampling_rate=sampling_rate, sig_time=sig_time
         )
         return peak_time
+
 
 def temp_hb_extract(
     sig,
@@ -177,11 +176,12 @@ def temp_hb_extract(
         (clean_sig_r[peak_info["Peaks"]] >= height_min)
         & (clean_sig_r[peak_info["Peaks"]] <= height_max)
     ]
-    peak_time_for_temp = samp_to_timestamp(
-        good_peaks, sig_time=clean_sig_time_r)
+    peak_time_for_temp = samp_to_timestamp(good_peaks, sig_time=clean_sig_time_r)
 
     rri, rri_time = peak_time_to_rri(
-        peak_time_for_temp, min_rri=60000 / max_bpm, max_rri=60000 / min_bpm,
+        peak_time_for_temp,
+        min_rri=60000 / max_bpm,
+        max_rri=60000 / min_bpm,
     )
 
     if move_average_rri_window is not None:
@@ -201,8 +201,7 @@ def temp_hb_extract(
     rri[anomalies] = np.nan
 
     if use_rri_to_peak_time:
-        peak_time_for_temp_confident = rri_to_peak_time(
-            rri=rri, rri_time=rri_time)
+        peak_time_for_temp_confident = rri_to_peak_time(rri=rri, rri_time=rri_time)
     else:
 
         peak_time_for_temp_confident = np.concatenate(

@@ -4,7 +4,13 @@ import sys
 import argparse
 import re
 import numpy as np
-from sklearn.metrics import accuracy_score, recall_score, f1_score, precision_score, confusion_matrix
+from sklearn.metrics import (
+    accuracy_score,
+    recall_score,
+    f1_score,
+    precision_score,
+    confusion_matrix,
+)
 import pandas as pd
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
@@ -21,11 +27,15 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--include_sensitivity", default=True, help="whether to include sensitivity analysis"
+    "--include_sensitivity",
+    default=True,
+    help="whether to include sensitivity analysis",
 )
 
 parser.add_argument(
-    "--include_specificity", default=True, help="whether to include specificity analysis"
+    "--include_specificity",
+    default=True,
+    help="whether to include specificity analysis",
 )
 
 args = parser.parse_args()
@@ -76,12 +86,12 @@ if __name__ == "__main__":
             "Task": selected_tasks,
             "Signal": selected_signals,
         }
-        
+
         # set location of root directory of input data
         train_loader = AudaceDataLoader(root=root_in_path)
-        
+
         in_data = train_loader.get_ibi_df()
-        
+
         # Use original feature values
         # rather than those relative to each participant's baseline
         rel_values = False
@@ -202,11 +212,14 @@ if __name__ == "__main__":
                                             n_inner_splits=4,
                                             train_bool=np.array(
                                                 [
-                                                    True
-                                                    if np.any(
-                                                        sig == np.array(sig_names_train)
+                                                    (
+                                                        True
+                                                        if np.any(
+                                                            sig
+                                                            == np.array(sig_names_train)
+                                                        )
+                                                        else False
                                                     )
-                                                    else False
                                                     for sig in signal
                                                 ]
                                             ),
@@ -230,7 +243,9 @@ if __name__ == "__main__":
                                             )
                                             y_pred = pred_pipe.predict(X_test)
                                             f1_scores.append(
-                                                f1_score(y_test, y_pred, average="macro")
+                                                f1_score(
+                                                    y_test, y_pred, average="macro"
+                                                )
                                             )
                                             recall_scores.append(
                                                 recall_score(
@@ -265,7 +280,9 @@ if __name__ == "__main__":
                                             "Task": selected_tasks,
                                             "Signal": selected_signals,
                                         }
-                                        out = AudaceDataLoader(root=root_in_path).get_split_pred_df(
+                                        out = AudaceDataLoader(
+                                            root=root_in_path
+                                        ).get_split_pred_df(
                                             selection_dict=selection_dict,
                                             load_from_file=True,
                                             save_file=False,
@@ -393,7 +410,7 @@ if __name__ == "__main__":
                 replace_dict[str(val)] = str(val).split(suf)[0]
     orig_name_syn_data = "ECG-IEMLe"
     name_syn_data = "SYN"
-    
+
     # orig_name_aug_data = orig_name_syn_data + " + ECG"
     name_aug_data = "ECG & " + name_syn_data
     replace_dict["ECG-IEMLe + ECG: Auto-CRITIAS_BP"] = name_aug_data
@@ -401,20 +418,20 @@ if __name__ == "__main__":
     for k, v in replace_dict.items():
         if orig_name_syn_data in v:
             replace_dict[k] = re.sub(orig_name_syn_data, name_syn_data, v)
-        
+
     orig_name_ieml = "IEML"
     name_ieml = "IEM"
     for k, v in replace_dict.items():
         if orig_name_ieml in v:
             replace_dict[k] = re.sub(orig_name_ieml, name_ieml, v)
-    
+
     orig_name_feat_set_b = "MedianNN + RMSSD"
     name_feat_set_b = "MedianNN & RMSSD"
-    
+
     replace_dict[orig_name_feat_set_b] = name_feat_set_b
-            
+
     replace_dict["All Neurokit2 features"] = "All HRV features"
-    
+
     rename_dict = {}
     val_col_name = "Test"
     acc_col_name = "Acc. (%)"
@@ -429,7 +446,7 @@ if __name__ == "__main__":
     rename_dict["Baselined"] = base_col_name
     rename_dict["Sensitivity"] = sensitivity_col_name
     rename_dict["Specificity"] = specificity_col_name
-    
+
     result_df_for_table = result_df_for_table.replace(replace_dict).rename(
         columns=rename_dict
     )
@@ -464,8 +481,15 @@ if __name__ == "__main__":
             f = open(out_path, "w")
             f.write(s)
             f.close()
-    
-    result_table_cols = ["Train", val_col_name, base_col_name, "Features", est_col_name, acc_col_name]
+
+    result_table_cols = [
+        "Train",
+        val_col_name,
+        base_col_name,
+        "Features",
+        est_col_name,
+        acc_col_name,
+    ]
     if include_sensitivity:
         result_table_cols.append(sensitivity_col_name)
     if include_specificity:
@@ -481,19 +505,19 @@ if __name__ == "__main__":
         latex_cols.append(specificity_col_name)
     #### TABLE 1: COMPARING BASELINED MODELS TRAINED ON ECG AND TESTED ON ECG
     table1 = result_df_for_table[
-        (result_df_for_table["Train"] == "ECG") & 
-        (result_df_for_table[val_col_name] == "ECG") &
-        (result_df_for_table[base_col_name].isin(["Yes"]))
+        (result_df_for_table["Train"] == "ECG")
+        & (result_df_for_table[val_col_name] == "ECG")
+        & (result_df_for_table[base_col_name].isin(["Yes"]))
     ]
     tables_for_latex.append(table1)
-    #write_latex_table(table1, out_path="table1.tex")
+    # write_latex_table(table1, out_path="table1.tex")
     print(table1.to_latex(index=False))
-    
+
     #### TABLE 2: COMPARING NON-BASELINED MODELS TRAINED ON ECG AND TESTED ON ECG
     table2 = result_df_for_table[
-        (result_df_for_table["Train"] == "ECG") & 
-        (result_df_for_table[val_col_name] == "ECG") &
-        (result_df_for_table[base_col_name].isin(["No"]))
+        (result_df_for_table["Train"] == "ECG")
+        & (result_df_for_table[val_col_name] == "ECG")
+        & (result_df_for_table[base_col_name].isin(["No"]))
     ]
     tables_for_latex.append(table2)
     print(table2.to_latex(index=False))
@@ -506,8 +530,7 @@ if __name__ == "__main__":
     ]
     tables_for_latex.append(table3)
     print(table3.to_latex(index=False))
-    
-    
+
     #### TABLE 4: COMPARING NON-BASELINED MODELS TRAINED ON IEML AND TESTED ON ECG
     table4 = result_df_for_table[
         (result_df_for_table["Train"].isin([name_ieml]))
@@ -516,7 +539,7 @@ if __name__ == "__main__":
     ]
     tables_for_latex.append(table4)
     print(table4.to_latex(index=False))
-    
+
     #### TABLE 5: COMPARING NON-BASELINED MODELS TRAINED ON IEML AND TESTED ON ECG_syn
     table5 = result_df_for_table[
         (result_df_for_table["Train"].isin([name_ieml]))
@@ -525,7 +548,7 @@ if __name__ == "__main__":
     ]
     tables_for_latex.append(table5)
     print(table5.to_latex(index=False))
-    
+
     #### TABLE 6: COMPARING NON-BASELINED MODELS TRAINED ON ECG AND TESTED ON IEML
     table6 = result_df_for_table[
         (result_df_for_table["Train"].isin(["ECG"]))
@@ -543,11 +566,9 @@ if __name__ == "__main__":
         & (result_df_for_table["Features"].isin(["All HRV features"]))
     ]
     print(table6.to_latex(index=False))
-    
+
     for table_for_latex in tables_for_latex:
-        table_for_latex = table_for_latex.loc[:, latex_cols].sort_values(
-            by=latex_cols
-        )
+        table_for_latex = table_for_latex.loc[:, latex_cols].sort_values(by=latex_cols)
         print(table_for_latex.to_latex(index=False))
 
     abs_df, _ = AudaceDataLoader(root=root_in_path).get_feat_dfs()
@@ -562,7 +583,14 @@ if __name__ == "__main__":
             if other_sig_name == "ECG-IEMLe":
                 df = abs_df.copy()
                 gt = "ECG"
-                info_cols = ["Signal", "Participant", "Task", "Rest", "SubSegIdx", "Method"]
+                info_cols = [
+                    "Signal",
+                    "Participant",
+                    "Task",
+                    "Rest",
+                    "SubSegIdx",
+                    "Method",
+                ]
                 grouping_col = "Signal"
                 index_cols = [col for col in info_cols if col != grouping_col]
                 new_sig_dfs = []
@@ -642,32 +670,31 @@ if __name__ == "__main__":
                 data1 = df[gt_sig_name]
                 data2 = df[other_sig_name]
                 sm.graphics.mean_diff_plot(
-                    data1, data2, ax=axs[i], scatter_kwds={"alpha": 0.25, "color": color_other_sig_name[other_sig_name]}
+                    data1,
+                    data2,
+                    ax=axs[i],
+                    scatter_kwds={
+                        "alpha": 0.25,
+                        "color": color_other_sig_name[other_sig_name],
+                    },
                 )
 
                 axs[i].set(
                     xlabel="Mean of " + gt_sig_name + " and " + other_sig_name_plot,
-                    ylabel=""
-                    + gt_sig_name
-                    + " - "
-                    + other_sig_name_plot,
+                    ylabel="" + gt_sig_name + " - " + other_sig_name_plot,
                 )
                 if hrv_col == "HRV_RMSSD":
-                    axs[i].set(
-                        ylim=[-1200, 400],
-                        xlim=[0, 800]
-                    )
+                    axs[i].set(ylim=[-1200, 400], xlim=[0, 800])
                 else:
-                    axs[i].set(
-                        ylim=[-300, 300],
-                        xlim=[300, 1200]
-                    )
+                    axs[i].set(ylim=[-300, 300], xlim=[300, 1200])
                 axs[i].set_title(label=conditions[i] + " conditions", fontsize=20)
-            #title_txt = "Bland-Altman plots for " + hrv_col
+            # title_txt = "Bland-Altman plots for " + hrv_col
             hrv_col_for_plot = hrv_col.split("HRV_")[1]
             title_txt = hrv_col_for_plot
             plt.suptitle(title_txt, y=1.05, fontsize=20)
-            fig_name = "bland-altman_" + hrv_col_for_plot + "_" + other_sig_name_plot + ".png"
+            fig_name = (
+                "bland-altman_" + hrv_col_for_plot + "_" + other_sig_name_plot + ".png"
+            )
             fig_path = pathlib.Path(root_out_path, fig_name)
             fig.savefig(
                 fig_path, facecolor="white", transparent=False, bbox_inches="tight"
@@ -715,7 +742,11 @@ if __name__ == "__main__":
         task = out["task"]
         signal = out["signal"]
 
-        outer_cv, _ = get_cv_iterator(sub, n_outer_splits=5, n_inner_splits=4,)
+        outer_cv, _ = get_cv_iterator(
+            sub,
+            n_outer_splits=5,
+            n_inner_splits=4,
+        )
 
         pred_pipe = make_prediction_pipeline()
 
@@ -736,51 +767,78 @@ if __name__ == "__main__":
         coef_df["Signal"] = sig_name
         coef_dfs.append(coef_df)
     coef_df = pd.concat(coef_dfs)
-    
-    coef_df = coef_df.replace({"IEML": name_ieml, "HRV_MedianNN": "MedianNN", "HRV_RMSSD": "RMSSD"})
-    fig, axes  = plt.subplots(figsize=(3, 3), dpi=1000)
-    
+
+    coef_df = coef_df.replace(
+        {"IEML": name_ieml, "HRV_MedianNN": "MedianNN", "HRV_RMSSD": "RMSSD"}
+    )
+    fig, axes = plt.subplots(figsize=(3, 3), dpi=1000)
+
     box = sns.boxplot(
-        x="Feature", y="Coefficient", hue="Signal", data=coef_df, palette="Set3", ax=axes
+        x="Feature",
+        y="Coefficient",
+        hue="Signal",
+        data=coef_df,
+        palette="Set3",
+        ax=axes,
     )
     plt.ylim([-2.5, 2.5])
     fig_name = "Coefs_log_reg.png"
     fig_path = pathlib.Path(root_out_path, fig_name)
-    fig.savefig(
-        fig_path, facecolor="white", transparent=False, bbox_inches="tight"
-    )
+    fig.savefig(fig_path, facecolor="white", transparent=False, bbox_inches="tight")
     ######## PLOT EXAMPLE TD IEM SEGMENTS
     loader = AudaceDataLoader(root=root_in_path)
     ibi_df = loader.get_ibi_df()
-    
+
     fig, axs = plt.subplots(2, 1, figsize=(7, 3.5), dpi=1000)
 
 for ax_ind in [0, 1]:
 
     data_format = "DB8k"
-    if ax_ind==0:
+    if ax_ind == 0:
         start_time = 180
     else:
         start_time = 246
     end_time = start_time + 15
     sig_name = "IEML"
-    rri_time = ibi_df[(ibi_df["Signal"]==sig_name) & (ibi_df["Participant"] == loader.sub_label)].loc[:,["IbiTime"]].values
-    rri = ibi_df[(ibi_df["Signal"]==sig_name) & (ibi_df["Participant"] == loader.sub_label)].loc[:,["Ibi"]].values
+    rri_time = (
+        ibi_df[
+            (ibi_df["Signal"] == sig_name) & (ibi_df["Participant"] == loader.sub_label)
+        ]
+        .loc[:, ["IbiTime"]]
+        .values
+    )
+    rri = (
+        ibi_df[
+            (ibi_df["Signal"] == sig_name) & (ibi_df["Participant"] == loader.sub_label)
+        ]
+        .loc[:, ["Ibi"]]
+        .values
+    )
 
     peak_time = rri_time[(rri_time >= start_time) & (rri_time <= end_time)]
     sig_name = "ieml"
     sig_info = loader.get_sig(
-        sig_name=sig_name, data_format=data_format, start_time=start_time, end_time=end_time
+        sig_name=sig_name,
+        data_format=data_format,
+        start_time=start_time,
+        end_time=end_time,
     )
-    axs[ax_ind].plot(sig_info["time"], sig_info["sig"] - np.mean(sig_info["sig"]), label="In-ear audio", alpha=0.75)
-    #plt.scatter(peak_time, sig_info["sig"][timestamp_to_samp(peak_time, sig_time=sig_info["time"])], color="orange", zorder=2)
+    axs[ax_ind].plot(
+        sig_info["time"],
+        sig_info["sig"] - np.mean(sig_info["sig"]),
+        label="In-ear audio",
+        alpha=0.75,
+    )
+    # plt.scatter(peak_time, sig_info["sig"][timestamp_to_samp(peak_time, sig_time=sig_info["time"])], color="orange", zorder=2)
     events = [peak_time]
     color = ["orange"]
     linestyle = ["--"]
     label = ["Heartbeat detected"]
     for i, event in enumerate(events):
         for j in events[i]:
-            axs[ax_ind].axvline(j, color=color[i], linestyle=linestyle[i], label=label[i])
+            axs[ax_ind].axvline(
+                j, color=color[i], linestyle=linestyle[i], label=label[i]
+            )
 
     # Display only one legend per event type
     handles, labels = axs[ax_ind].get_legend_handles_labels()
@@ -789,24 +847,28 @@ for ax_ind in [0, 1]:
         if label not in newLabels:
             newLabels.append(label)
             newHandles.append(handle)
-    if ax_ind==1:
-        axs[ax_ind].legend(newHandles, newLabels, loc='upper center', bbox_to_anchor=(0.5, -0.8),
-                  fancybox=True, shadow=True, ncol=5)
+    if ax_ind == 1:
+        axs[ax_ind].legend(
+            newHandles,
+            newLabels,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.8),
+            fancybox=True,
+            shadow=True,
+            ncol=5,
+        )
         axs[ax_ind].set_xlabel("Time (seconds)")
-        #axs[ax_ind].set_ylim([-0.010, 0.003])
+        # axs[ax_ind].set_ylim([-0.010, 0.003])
         axs[ax_ind].set_title("Stress condition")
     else:
         axs[ax_ind].set_title("Rest condition")
     axs[ax_ind].set_ylim([-0.005, 0.005])
     axs[ax_ind].set_xlim([start_time, end_time])
     axs[ax_ind].set_yticks([])
-    #axs[ax_ind].get_yaxis().set_visible(False)
-#plt.suptitle("Examples of in-ear audio recorded during rest and stress conditions")    
+    # axs[ax_ind].get_yaxis().set_visible(False)
+# plt.suptitle("Examples of in-ear audio recorded during rest and stress conditions")
 plt.tight_layout()
 fig_name = "Example_TD_IEM.png"
 fig_path = pathlib.Path(root_out_path, fig_name)
-fig.savefig(
-    fig_path, facecolor="white", transparent=False, bbox_inches="tight"
-)
+fig.savefig(fig_path, facecolor="white", transparent=False, bbox_inches="tight")
 plt.show()
-    

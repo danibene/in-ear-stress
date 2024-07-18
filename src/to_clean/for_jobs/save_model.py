@@ -5,8 +5,7 @@ import argparse
 import onnxmltools
 from skl2onnx import convert_sklearn, to_onnx, update_registered_converter
 from skl2onnx.common.shape_calculator import calculate_linear_classifier_output_shapes
-from onnxmltools.convert.xgboost.operator_converters.XGBoost import (
-    convert_xgboost)
+from onnxmltools.convert.xgboost.operator_converters.XGBoost import convert_xgboost
 
 from skl2onnx.common.data_types import FloatTensorType
 from xgboost import XGBClassifier
@@ -17,7 +16,9 @@ parser = argparse.ArgumentParser(
     description="Save default prediction pipeline trained on AUDACE dataset"
 )
 parser.add_argument(
-    "--out_path", default=None, help="base path to .pkl and .onnx files where model will be saved"
+    "--out_path",
+    default=None,
+    help="base path to .pkl and .onnx files where model will be saved",
 )
 parser.add_argument(
     "--root_in_path", default=None, help="location of root directory of input data"
@@ -128,13 +129,19 @@ if __name__ == "__main__":
     scaler = pred_pipe.named_steps["scaler"]
 
     update_registered_converter(
-    XGBClassifier, 'XGBoostXGBClassifier',
-    calculate_linear_classifier_output_shapes, convert_xgboost,
-    options={'nocl': [True, False], 'zipmap': [True, False, 'columns']})
-
+        XGBClassifier,
+        "XGBoostXGBClassifier",
+        calculate_linear_classifier_output_shapes,
+        convert_xgboost,
+        options={"nocl": [True, False], "zipmap": [True, False, "columns"]},
+    )
 
     # Convert the model to ONNX format
-    onnx_model = convert_sklearn(pred_pipe, "ONNX model", [("input", FloatTensorType([None, len(selected_features)]))])
+    onnx_model = convert_sklearn(
+        pred_pipe,
+        "ONNX model",
+        [("input", FloatTensorType([None, len(selected_features)]))],
+    )
 
     # Save the ONNX model to a file
     with open(onnx_path, "wb") as f:

@@ -197,8 +197,7 @@ def _signal_fixpeaks_kubios(
     """kubios method."""
 
     # Get corrected peaks and normal-to-normal intervals.
-    artifacts, subspaces = _find_artifacts(
-        peaks, sampling_rate=sampling_rate, **kwargs)
+    artifacts, subspaces = _find_artifacts(peaks, sampling_rate=sampling_rate, **kwargs)
     peaks_clean = _correct_artifacts(artifacts, peaks)
 
     if iterative:
@@ -281,8 +280,7 @@ def _find_artifacts(
             s22[d - padding] = np.max([drrs_pad[d + 1], drrs_pad[d + 2]])
     # Compute mRRs: time series of deviation of RRs from median.
     df = pd.DataFrame({"signal": rr})
-    medrr = df.rolling(medfilt_order, center=True,
-                       min_periods=1).median().signal.values
+    medrr = df.rolling(medfilt_order, center=True, min_periods=1).median().signal.values
     mrrs = rr - medrr
     mrrs[mrrs < 0] = mrrs[mrrs < 0] * 2
     # Normalize by threshold.
@@ -326,13 +324,11 @@ def _find_artifacts(
             longshort_candidates.append(i + 1)
         for j in longshort_candidates:
             # Long beat.
-            eq3 = np.logical_and(drrs[j] > 1, s22[j]
-                                 < -1)  # pylint: disable=E1111
+            eq3 = np.logical_and(drrs[j] > 1, s22[j] < -1)  # pylint: disable=E1111
             # Long or short.
             eq4 = np.abs(mrrs[j]) > 3  # Figure 1
             # Short beat.
-            eq5 = np.logical_and(drrs[j] < -1, s22[j]
-                                 > 1)  # pylint: disable=E1111
+            eq5 = np.logical_and(drrs[j] < -1, s22[j] > 1)  # pylint: disable=E1111
 
             if ~np.any([eq3, eq4, eq5]):
                 # If none of the three equations is true: normal beat.
@@ -479,8 +475,7 @@ def _correct_misaligned(misaligned_idcs, peaks):
     peaks_interp = prev_peaks + half_ibi
     # Shift the R-peaks from the old to the new position.
     corrected_peaks = np.delete(corrected_peaks, misaligned_idcs)
-    corrected_peaks = np.concatenate(
-        (corrected_peaks, peaks_interp)).astype(int)
+    corrected_peaks = np.concatenate((corrected_peaks, peaks_interp)).astype(int)
     corrected_peaks.sort(kind="mergesort")
 
     return corrected_peaks
@@ -515,8 +510,7 @@ def _plot_artifacts_lipponen2019(artifacts, info):
     # Visualize artifact type indices.
 
     # Set grids
-    gs = matplotlib.gridspec.GridSpec(
-        ncols=4, nrows=3, width_ratios=[1, 2, 2, 2])
+    gs = matplotlib.gridspec.GridSpec(ncols=4, nrows=3, width_ratios=[1, 2, 2, 2])
     fig = plt.figure(constrained_layout=False, figsize=(15, 10))
     ax0 = fig.add_subplot(gs[0, :-2])
     ax1 = fig.add_subplot(gs[1, :-2])
@@ -592,8 +586,7 @@ def _plot_artifacts_lipponen2019(artifacts, info):
     )
     ax4.add_patch(poly0)
     verts1 = [(1, -c1 * 1 - c2), (1, -5), (10, -5), (10, -c1 * 10 - c2)]
-    poly1 = matplotlib.patches.Polygon(
-        verts1, alpha=0.3, facecolor="r", edgecolor=None)
+    poly1 = matplotlib.patches.Polygon(verts1, alpha=0.3, facecolor="r", edgecolor=None)
     ax4.add_patch(poly1)
     ax4.legend(loc="upper right")
 
@@ -637,8 +630,7 @@ def _remove_small(
         interval = signal_period(
             peaks, sampling_rate=sampling_rate, desired_length=None
         )
-        peaks = peaks[standardize(interval, robust=robust)
-                      > relative_interval_min]
+        peaks = peaks[standardize(interval, robust=robust) > relative_interval_min]
     return peaks
 
 
@@ -732,8 +724,7 @@ def _interpolate_missing(
 
         # Delete peak corresponding to large interval and replace by N NaNs
         peaks_to_correct[loc] = np.nan
-        peaks_to_correct = np.insert(
-            peaks_to_correct, loc, [np.nan] * (n_nan - 1))
+        peaks_to_correct = np.insert(peaks_to_correct, loc, [np.nan] * (n_nan - 1))
     # Interpolate values
     interpolated_peaks = (
         pd.Series(peaks_to_correct)

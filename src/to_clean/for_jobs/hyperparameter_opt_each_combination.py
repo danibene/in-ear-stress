@@ -6,6 +6,7 @@ import numpy as np
 import time
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
+
 # imports for f1 score, sensitivity, specificity
 from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
@@ -23,24 +24,19 @@ parser.add_argument(
 parser.add_argument(
     "--root_in_path", default=None, help="location of root directory of input data"
 )
+parser.add_argument("--baseline_label", default=None, help="baseline label e.g. No")
+parser.add_argument("--model_label", default=None, help="model label e.g. XGBoost")
 parser.add_argument(
-    "--baseline_label", default=None, help="baseline label e.g. No"
-)
-parser.add_argument(
-    "--model_label", default=None, help="model label e.g. XGBoost"
-)
-parser.add_argument(
-    "--selected_feature_label", default=None, help="feature label e.g. All Neurokit2 features"
+    "--selected_feature_label",
+    default=None,
+    help="feature label e.g. All Neurokit2 features",
 )
 parser.add_argument(
     "--sig_name_train", default=None, help="train signal e.g. ECG-IEMLe + ECG"
 )
-parser.add_argument(
-    "--sig_name_val", default=None, help="val signal e.g. IEML"
-)
+parser.add_argument("--sig_name_val", default=None, help="val signal e.g. IEML")
 
 args = parser.parse_args()
-
 
 
 if __name__ == "__main__":
@@ -96,12 +92,12 @@ if __name__ == "__main__":
             "Task": selected_tasks,
             "Signal": selected_signals,
         }
-        
+
         # set location of root directory of input data
         train_loader = AudaceDataLoader(root=root_in_path)
-        
+
         in_data = train_loader.get_ibi_df()
-        
+
         # Use original feature values
         # rather than those relative to each participant's baseline
         rel_values = False
@@ -142,17 +138,17 @@ if __name__ == "__main__":
         )
         seed = 0
         nk_feats = [col for col in out["X"].columns if "HRV_" in col]
-        
+
         if baseline_label is None:
             baseline_labels = ["Yes", "No"]
         else:
             baseline_labels = [baseline_label]
-        
+
         if model_label is None:
             model_labels = ["Log. Reg.", "XGBoost"]
         else:
             model_labels = [model_label]
-            
+
         if selected_feature_label is None:
             selected_feature_labels = [
                 "MedianNN",
@@ -170,7 +166,7 @@ if __name__ == "__main__":
             list_sig_name_train = ["ECG-IEMLe + ECG", "ECG", "IEML"]
         else:
             list_sig_name_train = [sig_name_train]
-            
+
         if sig_name_val is None:
             list_sig_name_val = ["ECG", "IEML", "ECG-IEMLe"]
         else:
@@ -241,11 +237,14 @@ if __name__ == "__main__":
                                             n_inner_splits=4,
                                             train_bool=np.array(
                                                 [
-                                                    True
-                                                    if np.any(
-                                                        sig == np.array(sig_names_train)
+                                                    (
+                                                        True
+                                                        if np.any(
+                                                            sig
+                                                            == np.array(sig_names_train)
+                                                        )
+                                                        else False
                                                     )
-                                                    else False
                                                     for sig in signal
                                                 ]
                                             ),
@@ -261,10 +260,17 @@ if __name__ == "__main__":
                                         for train, test in outer_cv:
                                             cv = inner_cv[cv_count]
                                             cv_count += 1
-                                            search = GridSearchCV(pred_pipe, param_grid=search_space, cv=cv, verbose=3)
+                                            search = GridSearchCV(
+                                                pred_pipe,
+                                                param_grid=search_space,
+                                                cv=cv,
+                                                verbose=3,
+                                            )
                                             search.fit(X=X, y=y)
-                                            pred_pipe = pred_pipe.set_params(**search.best_params_)
-                                            
+                                            pred_pipe = pred_pipe.set_params(
+                                                **search.best_params_
+                                            )
+
                                             X_train = X.iloc[train]
                                             y_train = y[train]
 
@@ -299,7 +305,7 @@ if __name__ == "__main__":
                                                 sensitivity_score(
                                                     y_test,
                                                     pred_pipe.predict(X_test),
-                                                    pos_label="Stress"
+                                                    pos_label="Stress",
                                                 )
                                             )
                                             specificity_scores.append(
@@ -328,7 +334,9 @@ if __name__ == "__main__":
                                             "Task": selected_tasks,
                                             "Signal": selected_signals,
                                         }
-                                        out = AudaceDataLoader(root=root_in_path).get_split_pred_df(
+                                        out = AudaceDataLoader(
+                                            root=root_in_path
+                                        ).get_split_pred_df(
                                             selection_dict=selection_dict,
                                             load_from_file=True,
                                             save_file=False,

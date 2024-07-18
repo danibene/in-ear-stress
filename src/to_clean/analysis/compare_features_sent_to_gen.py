@@ -15,9 +15,11 @@ orig_abs_df = pd.read_csv("local_data/abs_feat_df_20230411.csv")
 feature = "HRV_RMSSD"
 for abs_df in [gen_abs_df, sent_abs_df, orig_abs_df]:
     print(abs_df.head())
-    gt_record = abs_df[abs_df["Signal"]=="ECG"]
-    record = abs_df[abs_df["Signal"]=="IEML"]
-    mean_abs_diff = np.nanmean(np.abs(gt_record[feature].values - record[feature].values))
+    gt_record = abs_df[abs_df["Signal"] == "ECG"]
+    record = abs_df[abs_df["Signal"] == "IEML"]
+    mean_abs_diff = np.nanmean(
+        np.abs(gt_record[feature].values - record[feature].values)
+    )
     print(feature, mean_abs_diff)
 
 
@@ -30,5 +32,7 @@ print(gen_abs_df_aligned == orig_abs_df)
 for feature in gen_abs_df_aligned.columns:
     # If the feature is numeric
     if gen_abs_df_aligned[feature].dtype == "float64":
-        mean_abs_diff = np.nanmean(np.abs(gen_abs_df_aligned[feature] - orig_abs_df[feature]))
+        mean_abs_diff = np.nanmean(
+            np.abs(gen_abs_df_aligned[feature] - orig_abs_df[feature])
+        )
         # print(feature, mean_abs_diff)

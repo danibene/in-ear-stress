@@ -168,11 +168,11 @@ def write_dict_to_json(d, json_path="out.json", fmt="%s", rewrite=False):
         raise ImportError(
             "Error in write_dict_to_json(): the 'json_tricks' module is required",
         )
-    
+
     # if parent path does not exist create it
     pathlib.Path(json_path).resolve().parent.mkdir(parents=True, exist_ok=True)
     if not pathlib.Path(json_path).suffix == ".json":
-        json_path = pathlib.Path(json_path + ".json") 
+        json_path = pathlib.Path(json_path + ".json")
     if not pathlib.Path(json_path).is_file() or rewrite:
         with open(str(json_path), "w") as json_file:
             dump(d, json_file, allow_nan=True)

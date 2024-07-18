@@ -28,8 +28,7 @@ def rri_to_peak_time(rri, rri_time):
     non_successive_rri_ind = np.arange(1, len(rri_time))[
         np.invert(_intervals_successive(rri, rri_time, thresh_unequal=10))
     ]
-    subtr_time_before_ind = np.concatenate(
-        (np.array([0]), non_successive_rri_ind))
+    subtr_time_before_ind = np.concatenate((np.array([0]), non_successive_rri_ind))
     times_to_insert = (
         rri_time[subtr_time_before_ind] - rri[subtr_time_before_ind] / 1000
     )
@@ -121,10 +120,8 @@ def resample_nonuniform(
         import matlab.engine
 
         eng = matlab.engine.start_matlab()
-        eng.workspace["x"] = matlab.double(
-            np.vstack(sig).astype(dtype="float64"))
-        eng.workspace["tx"] = matlab.double(
-            np.vstack(sig_time).astype(dtype="float64"))
+        eng.workspace["x"] = matlab.double(np.vstack(sig).astype(dtype="float64"))
+        eng.workspace["tx"] = matlab.double(np.vstack(sig_time).astype(dtype="float64"))
         eng.workspace["fs"] = matlab.double(new_sampling_rate)
         y, ty = eng.eval("resample(x,tx,fs);", nargout=2)
         new_sig = np.hstack(np.asarray(y))
@@ -152,8 +149,7 @@ def resample_nonuniform(
 def interpolate_nonuniform(sig, sig_time, sampling_rate=1000, method="quadratic"):
     start_sample_new = np.floor(sampling_rate * sig_time[0])
     end_sample_new = np.ceil(sampling_rate * sig_time[-1])
-    new_sig_time = np.arange(
-        start_sample_new, end_sample_new + 1) / sampling_rate
+    new_sig_time = np.arange(start_sample_new, end_sample_new + 1) / sampling_rate
     new_sig = signal_interpolate(
         x_values=sig_time, y_values=sig, x_new=new_sig_time, method=method
     )
@@ -171,14 +167,12 @@ def find_local_hb_peaks(
     **kwargs
 ):
     if sig_time is None:
-        sig_time = sampling_rate_to_sig_time(
-            sig=sig, sampling_rate=sampling_rate)
+        sig_time = sampling_rate_to_sig_time(sig=sig, sampling_rate=sampling_rate)
     else:
         sampling_rate = sig_time_to_sampling_rate(sig_time=sig_time)
     new_peak_time = []
     if check_height_outlier:
-        peak_height = sig[timestamp_to_samp(
-            peak_time, sampling_rate, sig_time)]
+        peak_height = sig[timestamp_to_samp(peak_time, sampling_rate, sig_time)]
     for peak in peak_time:
 
         hb_sig, hb_sig_time = get_local_hb_sig(
@@ -197,10 +191,8 @@ def find_local_hb_peaks(
 
             if use_prominence:
                 local_peaks, _ = scipy.signal.find_peaks(hb_sig)
-                local_prominence = scipy.signal.peak_prominences(hb_sig, local_peaks)[
-                    0]
-                potential_peaks_index = local_peaks[argtop_k(
-                    local_prominence, k=k)]
+                local_prominence = scipy.signal.peak_prominences(hb_sig, local_peaks)[0]
+                potential_peaks_index = local_peaks[argtop_k(local_prominence, k=k)]
             else:
                 potential_peaks_index = argtop_k(hb_sig, k=k)
             peak_is_outlier = True
@@ -228,8 +220,7 @@ def find_local_hb_peaks(
             if len(hb_sig) > 1:
                 if use_prominence:
                     local_peaks, _ = scipy.signal.find_peaks(hb_sig)
-                    prominences = scipy.signal.peak_prominences(
-                        hb_sig, local_peaks)[0]
+                    prominences = scipy.signal.peak_prominences(hb_sig, local_peaks)[0]
                     new_peak = hb_sig_time[local_peaks[np.argmax(prominences)]]
                 else:
                     new_peak = hb_sig_time[np.argmax(hb_sig)]
@@ -268,8 +259,7 @@ def get_sig_time_ref_first_samp(sig_time, sig=None, missing_value=np.nan):
         )
         replace_zeros = np.cumsum(for_replace_zeros)
         sig_time = (
-            sig_time - sig_time[n_zeros] +
-            np.max(replace_zeros) + 1 / sampling_rate
+            sig_time - sig_time[n_zeros] + np.max(replace_zeros) + 1 / sampling_rate
         )
         sig_time[0:n_zeros] = replace_zeros
         if sig is not None:
@@ -299,7 +289,7 @@ def drop_missing(sig, sig_time=None, missing_value=np.nan):
 
 def roll_func(x, window, func, func_args={}):
     roll_x = np.array(
-        [func(x[i: i + window], **func_args) for i in range(len(x) - window)]
+        [func(x[i : i + window], **func_args) for i in range(len(x) - window)]
     )
     return roll_x
 
@@ -312,8 +302,7 @@ def detect_invert_ecg(sig, sampling_rate=1000):
     filt_sig = nk.signal.signal_filter(
         sig, sampling_rate=sampling_rate, lowcut=3, highcut=45
     )
-    med_max = np.median(
-        roll_func(filt_sig, window=1 * sampling_rate, func=abs_max))
+    med_max = np.median(roll_func(filt_sig, window=1 * sampling_rate, func=abs_max))
     return med_max < np.mean(sig)
 
 
@@ -361,8 +350,7 @@ def interpl_intervals_preserve_nans(x_old, y_old, x_new):
         if i != 0:
             if np.abs((x_old[i] - (y_old[i] / 1000)) - x_old[i - 1]) < step:
                 y_new_nan[
-                    (x_new >= x_old[i] - (y_old[i] / 1000)
-                     ) & (x_new <= x_old[i])
+                    (x_new >= x_old[i] - (y_old[i] / 1000)) & (x_new <= x_old[i])
                 ] = False
         y_new_nan[np.argmin(np.abs(x_new - x_old[i]))] = False
     f = scipy.interpolate.interp1d(
@@ -390,7 +378,7 @@ def norm_corr(a, b, maxlags=0):
     b = (b - np.mean(b)) / (np.std(b))
     c = np.correlate(a, b, "full")
     # c = np.correlate(x, y, mode=2)
-    c = c[Nx - 1 - maxlags: Nx + maxlags]
+    c = c[Nx - 1 - maxlags : Nx + maxlags]
     return c
 
 
@@ -426,8 +414,7 @@ def scale_and_clip_to_max_one(
 def find_anomalies(peak_time, sig_info=None, check_successive=True):
     peak_time = np.array(peak_time)
 
-    rri, rri_time = peak_time_to_rri(
-        peak_time, min_rri=60000 / 200, max_rri=60000 / 20)
+    rri, rri_time = peak_time_to_rri(peak_time, min_rri=60000 / 200, max_rri=60000 / 20)
     interpolation_rate = 4
     inter_f_time = np.arange(
         rri_time[0] - rri[0] / 1000 - 60 / 40,
@@ -435,8 +422,7 @@ def find_anomalies(peak_time, sig_info=None, check_successive=True):
         1 / interpolation_rate,
     )
     rri_mid_time = rri_time - (rri / 1000) / 2
-    inter_rri = interpl_intervals_preserve_nans(
-        rri_mid_time, rri, inter_f_time)
+    inter_rri = interpl_intervals_preserve_nans(rri_mid_time, rri, inter_f_time)
     diff_rri = np.diff(rri)
     if check_successive:
         diff_rri = diff_rri[find_successive_intervals(rri, rri_time)]
@@ -487,8 +473,7 @@ def find_anomalies(peak_time, sig_info=None, check_successive=True):
         peak_height = sig_info["sig"][
             timestamp_to_samp(peak_time, sig_time=sig_info["time"])
         ]
-        inter_peak_height = nk.signal_interpolate(
-            peak_time, peak_height, inter_f_time)
+        inter_peak_height = nk.signal_interpolate(peak_time, peak_height, inter_f_time)
         f4 = scale_and_clip_to_max_one(
             np.abs(nk.standardize(inter_peak_height, robust=True)),
             max_value=10,

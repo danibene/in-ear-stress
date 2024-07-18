@@ -150,7 +150,9 @@ if __name__ == "__main__":
                     feat for feat in selected_features if feat in intersect_feats
                 ]
                 outer_cv, _ = get_cv_iterator(
-                    out_train["sub"], n_outer_splits=5, n_inner_splits=4,
+                    out_train["sub"],
+                    n_outer_splits=5,
+                    n_inner_splits=4,
                 )
                 cv_results = cross_validate(
                     pipe_clf,

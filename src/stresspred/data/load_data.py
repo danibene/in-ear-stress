@@ -89,6 +89,7 @@ class BioDataLoader:
                         URL_P5_STRESS_ONLY_DB8K,
                         download_from_url,
                     )
+
                     out_path = pathlib.Path(
                         pathlib.Path(self.paths["data_derivatives_dir"]),
                         "DB8k" + ".zip",
@@ -108,12 +109,15 @@ class BioDataLoader:
             file_path = str(file_path)
         if sig_name == "ieml" or pathlib.Path(file_path).suffix == ".wav":
             if end_time is None:
-                sig_ch = librosa.load(file_path, sr=None,
-                                      mono=True, offset=start_time)
+                sig_ch = librosa.load(file_path, sr=None, mono=True, offset=start_time)
             else:
                 dur = end_time - start_time
                 sig_ch = librosa.load(
-                    file_path, sr=None, mono=True, offset=start_time, duration=dur,
+                    file_path,
+                    sr=None,
+                    mono=True,
+                    offset=start_time,
+                    duration=dur,
                 )
             sig = sig_ch[0]
             sampling_rate = sig_ch[1]
@@ -133,7 +137,10 @@ class BioDataLoader:
                 ch_index = 1
             if sig_name == "ti_ppg":
                 ch_index = 6
-            sig_df = pd.read_csv(file_path, header=identify_header(file_path),)
+            sig_df = pd.read_csv(
+                file_path,
+                header=identify_header(file_path),
+            )
             if len(sig_df.columns) > 1:
                 sig_ch = sig_df.iloc[:, ch_index].values.astype(float)
                 sig_ch_time, sig_ch = get_sig_time_ref_first_samp(
@@ -238,6 +245,7 @@ class StressBioDataLoader(BioDataLoader):
                         URL_AUDACE_ONLY_STRESS_CLASS,
                         download_from_url,
                     )
+
                     download_url = URL_AUDACE_ONLY_STRESS_CLASS
 
                 elif self.dataset_label.upper() == "P5_STRESS":
@@ -245,16 +253,14 @@ class StressBioDataLoader(BioDataLoader):
                         URL_P5_STRESS_ONLY_STRESS_CLASS,
                         download_from_url,
                     )
+
                     download_url = URL_P5_STRESS_ONLY_STRESS_CLASS
 
                 out_path = pathlib.Path(
                     pathlib.Path(self.paths["stress_class_data_dir"]).parent,
-                    pathlib.Path(
-                        self.paths["stress_class_data_dir"]).stem + ".zip",
+                    pathlib.Path(self.paths["stress_class_data_dir"]).stem + ".zip",
                 )
-                download_from_url(
-                    download_url, out_path=out_path, unzip=True
-                )
+                download_from_url(download_url, out_path=out_path, unzip=True)
             self.ibi_df = pd.read_csv(self.paths["ibi_df"])
         else:
             self.ibi_df = in_data.copy()
@@ -268,15 +274,19 @@ class StressBioDataLoader(BioDataLoader):
         return self.ibi_df
 
     def get_feat_dfs(
-        self, load_from_file=True, save_file=False, rel_values=False, in_data=None, out_path=None
+        self,
+        load_from_file=True,
+        save_file=False,
+        rel_values=False,
+        in_data=None,
+        out_path=None,
     ):
         extract_feats = True
         if load_from_file:
             self.get_paths()
             if rel_values:
-                if (
-                    os.path.exists(self.paths["abs_feat_df"])
-                    and os.path.exists(self.paths["base_feat_df"])
+                if os.path.exists(self.paths["abs_feat_df"]) and os.path.exists(
+                    self.paths["base_feat_df"]
                 ):
                     self.abs_feat_df = pd.read_csv(self.paths["abs_feat_df"])
                     self.base_feat_df = pd.read_csv(self.paths["base_feat_df"])
@@ -287,12 +297,13 @@ class StressBioDataLoader(BioDataLoader):
                     extract_feats = False
         if extract_feats:
             all_sig_ibi_df = self.get_ibi_df(
-                load_from_file=load_from_file, save_file=save_file, in_data=in_data)
+                load_from_file=load_from_file, save_file=save_file, in_data=in_data
+            )
             # here is where only certain signals could be selected
             signals = all_sig_ibi_df["Signal"].unique()
             # e.g. signals = [1] would be just ECG
             ibi_df = all_sig_ibi_df[all_sig_ibi_df["Signal"].isin(signals)]
-            
+
             if rel_values:
                 # create DataFrame with baseline segments for each task
                 # for this dataset it is from the rest data
@@ -322,24 +333,23 @@ class StressBioDataLoader(BioDataLoader):
                         pathlib.Path(self.paths["base_feat_df"]).resolve().parent.mkdir(
                             parents=True, exist_ok=True
                         )
-                    self.abs_feat_df.to_csv(
-                        self.paths["abs_feat_df"], index=False)
+                    self.abs_feat_df.to_csv(self.paths["abs_feat_df"], index=False)
                     if rel_values:
                         self.base_feat_df.to_csv(
-                            self.paths["base_feat_df"], index=False)
+                            self.paths["base_feat_df"], index=False
+                        )
                 else:
                     if pathlib.Path(out_path).is_dir():
                         abs_feat_df_path = str(
                             pathlib.Path(
-                                out_path, pathlib.Path(
-                                    self.paths["abs_feat_df"]).name
+                                out_path, pathlib.Path(self.paths["abs_feat_df"]).name
                             )
                         )
                         if rel_values:
                             base_feat_df_path = str(
                                 pathlib.Path(
-                                    out_path, pathlib.Path(
-                                        self.paths["base_feat_df"]).name
+                                    out_path,
+                                    pathlib.Path(self.paths["base_feat_df"]).name,
                                 )
                             )
                     else:
@@ -378,10 +388,13 @@ class StressBioDataLoader(BioDataLoader):
             if save_file:
                 self.rel_feat_df.to_csv(self.paths["rel_feat_df"], index=False)
         return self.rel_feat_df
-    
-    def get_base_feat_df(self, load_from_file=True, save_file=False, in_data=None, expected_columns=[]):
+
+    def get_base_feat_df(
+        self, load_from_file=True, save_file=False, in_data=None, expected_columns=[]
+    ):
         ibi_df = self.get_ibi_df(
-        load_from_file=load_from_file, save_file=save_file, in_data=in_data)
+            load_from_file=load_from_file, save_file=save_file, in_data=in_data
+        )
         # create DataFrame with baseline segments for each task
         # for this dataset it is from the rest data
         base_ibi_df = create_base_df(ibi_df)
@@ -389,7 +402,6 @@ class StressBioDataLoader(BioDataLoader):
             base_ibi_df, expected_columns=expected_columns
         )
         return self.base_feat_df
-
 
     def get_pred_df(
         self,
@@ -405,8 +417,7 @@ class StressBioDataLoader(BioDataLoader):
         # to later be filtered before the NaN selection
         # since feature extraction takes a while
         if selection_dict is None:
-            selection_dict = {"Task": selected_tasks,
-                              "Signal": selected_signals}
+            selection_dict = {"Task": selected_tasks, "Signal": selected_signals}
         self.selected_signals = selection_dict["Signal"]
         if rel_values:
             self.get_rel_df(
@@ -415,7 +426,10 @@ class StressBioDataLoader(BioDataLoader):
             feat_df = self.rel_feat_df.copy()
         else:
             self.get_feat_dfs(
-                load_from_file=load_from_file, save_file=save_file, rel_values=rel_values, in_data=in_data
+                load_from_file=load_from_file,
+                save_file=save_file,
+                rel_values=rel_values,
+                in_data=in_data,
             )
             feat_df = self.abs_feat_df.copy()
         for key, value in selection_dict.items():
@@ -458,7 +472,9 @@ class StressBioDataLoader(BioDataLoader):
             self.method_data,
             self.subseg_data,
         ) = prep_df_for_class(
-            self.pred_df, dropna=dropna, selected_features=selected_features,
+            self.pred_df,
+            dropna=dropna,
+            selected_features=selected_features,
         )
         self.data = (self.X_data, self.y_data)
         if output_type == dict:
@@ -518,8 +534,7 @@ class StressBioDataLoader(BioDataLoader):
                 for r in range(len(rri_time)):
                     if rri_time[r] >= frames[f][0] and rri_time[r] <= frames[f][1]:
                         sub_seg_ind = f + 1
-                        new_dict = {info_keys[i]: key[i]
-                                    for i in range(len(info_keys))}
+                        new_dict = {info_keys[i]: key[i] for i in range(len(info_keys))}
                         new_dict[sub_seg_key] = sub_seg_ind
                         new_dict[rri_key] = rri[r]
                         new_dict[rri_time_key] = rri_time[r]
@@ -531,8 +546,7 @@ class StressBioDataLoader(BioDataLoader):
                 "Ibi"
             ].transform("sum")
             resegmented_ibi_df = resegmented_ibi_df[
-                np.abs(resegmented_ibi_df["SumIbi"] /
-                       1000 - seg_len) < sum_ibi_tol
+                np.abs(resegmented_ibi_df["SumIbi"] / 1000 - seg_len) < sum_ibi_tol
             ].drop(columns="SumIbi")
         if max_minus_min_ibi_tol < np.inf:
             resegmented_ibi_df["MaxMinusMinIbiTime"] = resegmented_ibi_df.groupby(
@@ -579,8 +593,7 @@ class StressBioDataLoader(BioDataLoader):
                     if "BASELINEPRE" in rec["label"]:
                         new_label = "silence"
                     else:
-                        new_label = rec["label"].split(
-                            "_TSK")[0].lower() + "-task"
+                        new_label = rec["label"].split("_TSK")[0].lower() + "-task"
 
                     new_recs.append(
                         {
@@ -645,8 +658,7 @@ class StressBioDataLoader(BioDataLoader):
                     task_start_index.extend(
                         [
                             task_start_possible_indices[
-                                np.argmax(
-                                    in_df["t"][task_start_possible_indices])
+                                np.argmax(in_df["t"][task_start_possible_indices])
                             ]
                         ]
                     )
@@ -666,8 +678,7 @@ class StressBioDataLoader(BioDataLoader):
                 if time + uni_rest_duration < orig_task_start_time[i]
             ]
             if len(indices_after_time) > 0:
-                closest_index = np.argmin(
-                    orig_task_start_time[indices_after_time])
+                closest_index = np.argmin(orig_task_start_time[indices_after_time])
                 uni_rest_names.append(
                     "rest_" + uni_task_names[indices_after_time][closest_index]
                 )
@@ -698,8 +709,7 @@ class StressBioDataLoader(BioDataLoader):
 class AudaceDataLoader(StressBioDataLoader):
     def __init__(self, root=None, dataset_label="AUDACE", sub_label="01_F-HG"):
         if root is None:
-            root = pathlib.Path(
-                code_paths["repo_path"], "local_data", "AUDACE", "data")
+            root = pathlib.Path(code_paths["repo_path"], "local_data", "AUDACE", "data")
         self.root = root
         self.sub_label = sub_label
         self.data = pd.DataFrame({"X": [np.nan], "y": [np.nan]})
@@ -767,8 +777,7 @@ class AudaceDataLoader(StressBioDataLoader):
                 for i in range(len(sig_filename_keys)):
                     self.paths[sig_filename_keys[i]] = pathlib.Path(
                         self.paths["sig_data_dir"],
-                        sig_filename_start +
-                        sig_filename_middles[i] + sig_filename_end,
+                        sig_filename_start + sig_filename_middles[i] + sig_filename_end,
                     )
         else:
             self.paths = paths
@@ -777,8 +786,7 @@ class AudaceDataLoader(StressBioDataLoader):
 
     def get_dataset_iterator(self):
         dataset_iterator = []
-        sub_data_dirs = list(pathlib.Path(
-            self.root, "derivatives", "DB8k").glob("*"))
+        sub_data_dirs = list(pathlib.Path(self.root, "derivatives", "DB8k").glob("*"))
         for sub_data_dir in sub_data_dirs:
             sub_label = sub_data_dir.stem
             dataset_iterator.append(sub_label)
@@ -820,7 +828,8 @@ class P5_StressDataLoader(StressBioDataLoader):
                 self.paths["data_derivatives_dir"], "stress_class"
             )
             self.paths["ibi_df"] = pathlib.Path(
-                self.paths["stress_class_data_dir"], "ibi_df.csv",
+                self.paths["stress_class_data_dir"],
+                "ibi_df.csv",
             )
             self.paths["abs_feat_df"] = pathlib.Path(
                 self.paths["stress_class_data_dir"], "abs_feat_df.csv"
@@ -832,8 +841,7 @@ class P5_StressDataLoader(StressBioDataLoader):
                 self.paths["stress_class_data_dir"], "rel_feat_df.csv"
             )
             if data_format == "synchedOriginal":
-                self.paths["formatted_data_dir"] = pathlib.Path(
-                    self.root, data_format)
+                self.paths["formatted_data_dir"] = pathlib.Path(self.root, data_format)
 
                 self.paths["sub_data_dirs"] = list(
                     self.paths["formatted_data_dir"].glob("*prompt*")
@@ -908,14 +916,12 @@ class P5_StressDataLoader(StressBioDataLoader):
 
                 sig_filename_end = "-Sig-Raw.wav"
                 sig_filename_middles = ["TiPpg", "ZephyrEcg", "Ieml"]
-                sig_filename_keys = ["ti_ppg_sig",
-                                     "zephyr_ecg_sig", "ieml_sig"]
+                sig_filename_keys = ["ti_ppg_sig", "zephyr_ecg_sig", "ieml_sig"]
 
                 for i in range(len(sig_filename_keys)):
                     self.paths[sig_filename_keys[i]] = pathlib.Path(
                         self.paths["sig_data_dir"],
-                        sig_filename_start +
-                        sig_filename_middles[i] + sig_filename_end,
+                        sig_filename_start + sig_filename_middles[i] + sig_filename_end,
                     )
         else:
             self.paths = paths
@@ -972,22 +978,19 @@ class P5M5DataLoader(StressBioDataLoader):
             path for path in list(pathlib.Path(self.root).glob("P*")) if path.is_dir()
         ]
 
-        self.paths["ti_ppg_sig"] = pathlib.Path(
-            self.paths["data_dir"], "TI_PPG.csv")
+        self.paths["ti_ppg_sig"] = pathlib.Path(self.paths["data_dir"], "TI_PPG.csv")
         self.paths["zephyr_ecg_sig"] = pathlib.Path(
             self.paths["data_dir"], "ZephyrECG.csv"
         )
         self.paths["ecg_audio_sig"] = pathlib.Path(
             self.paths["data_dir"], "ECG_audio.wav"
         )
-        self.paths["ieml_sig"] = pathlib.Path(
-            self.paths["data_dir"], "IEM_L.wav")
+        self.paths["ieml_sig"] = pathlib.Path(self.paths["data_dir"], "IEM_L.wav")
 
         self.paths["original_sub_data_dir"] = [
             path
             for path in list(
-                pathlib.Path(self.root, self.dataset_label,
-                             "original").glob("P*")
+                pathlib.Path(self.root, self.dataset_label, "original").glob("P*")
             )
             if path.is_dir() and self.sub_label in str(path)
         ][0]
@@ -1003,7 +1006,8 @@ class P5M5DataLoader(StressBioDataLoader):
             self.paths["data_derivatives_dir"], "stress_class"
         )
         self.paths["ibi_df"] = pathlib.Path(
-            self.paths["stress_class_data_dir"], "ibi_df.csv",
+            self.paths["stress_class_data_dir"],
+            "ibi_df.csv",
         )
         self.paths["abs_feat_df"] = pathlib.Path(
             self.paths["stress_class_data_dir"], "abs_feat_df.csv"
@@ -1032,8 +1036,7 @@ class P5M5DataLoader(StressBioDataLoader):
         dataset_dirs = list(pathlib.Path(self.root).glob("P5M5*"))
         for dataset_dir in dataset_dirs:
             dataset_label = dataset_dir.stem
-            sub_data_dirs = list(pathlib.Path(
-                dataset_dir, data_format).glob("P*"))
+            sub_data_dirs = list(pathlib.Path(dataset_dir, data_format).glob("P*"))
             for sub_data_dir in sub_data_dirs:
                 sub_label = sub_data_dir.stem
                 if unsegmented:
@@ -1050,8 +1053,7 @@ class P5M5DataLoader(StressBioDataLoader):
                     ]
                 for cond_data_dir in cond_data_dirs:
                     cond_label = cond_data_dir.stem
-                    dataset_iterator.append(
-                        (dataset_label, sub_label, cond_label))
+                    dataset_iterator.append((dataset_label, sub_label, cond_label))
         return dataset_iterator
 
 

@@ -6,6 +6,7 @@ import numpy as np
 import time
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
+
 # imports for f1 score, sensitivity, specificity
 from sklearn.metrics import f1_score
 from sklearn.metrics import recall_score
@@ -23,21 +24,17 @@ parser.add_argument(
 parser.add_argument(
     "--root_in_path", default=None, help="location of root directory of input data"
 )
+parser.add_argument("--baseline_label", default=None, help="baseline label e.g. No")
+parser.add_argument("--model_label", default=None, help="model label e.g. XGBoost")
 parser.add_argument(
-    "--baseline_label", default=None, help="baseline label e.g. No"
-)
-parser.add_argument(
-    "--model_label", default=None, help="model label e.g. XGBoost"
-)
-parser.add_argument(
-    "--selected_feature_label", default=None, help="feature label e.g. All Neurokit2 features"
+    "--selected_feature_label",
+    default=None,
+    help="feature label e.g. All Neurokit2 features",
 )
 parser.add_argument(
     "--sig_name_train", default=None, help="train signal e.g. ECG-IEMLe + ECG"
 )
-parser.add_argument(
-    "--sig_name_val", default=None, help="val signal e.g. IEML"
-)
+parser.add_argument("--sig_name_val", default=None, help="val signal e.g. IEML")
 
 args = parser.parse_args()
 
@@ -77,7 +74,7 @@ if __name__ == "__main__":
         P5_StressDataLoader,
         make_prediction_pipeline,
         get_cv_iterator,
-        make_search_space
+        make_search_space,
     )
 
     root_out_path = args.root_out_path
@@ -228,7 +225,9 @@ if __name__ == "__main__":
                                                 np.unique(all_sig_names)
                                             )
                                             if eval_ind == 0:
-                                                loader = AudaceDataLoader(root=root_in_path)
+                                                loader = AudaceDataLoader(
+                                                    root=root_in_path
+                                                )
                                                 selection_dict = {
                                                     "Task": selected_tasks,
                                                     "Signal": selected_signals,
@@ -254,19 +253,26 @@ if __name__ == "__main__":
                                             signal = out["signal"]
                                             train_bool = np.array(
                                                 [
-                                                    True
-                                                    if np.any(signal[i] == np.array(sig_names_train))
-                                                    and task[i] in train_task_names
-                                                    else False
+                                                    (
+                                                        True
+                                                        if np.any(
+                                                            signal[i]
+                                                            == np.array(sig_names_train)
+                                                        )
+                                                        and task[i] in train_task_names
+                                                        else False
+                                                    )
                                                     for i in range(len(signal))
                                                 ]
                                             )
                                             val_bool = np.array(
                                                 [
-                                                    True
-                                                    if signal[i] == sig_name_val
-                                                    and task[i] in val_task_names
-                                                    else False
+                                                    (
+                                                        True
+                                                        if signal[i] == sig_name_val
+                                                        and task[i] in val_task_names
+                                                        else False
+                                                    )
                                                     for i in range(len(signal))
                                                 ]
                                             )
@@ -287,9 +293,16 @@ if __name__ == "__main__":
                                             for train, test in outer_cv:
                                                 cv = inner_cv[cv_count]
                                                 cv_count += 1
-                                                search = GridSearchCV(pred_pipe, param_grid=search_space, cv=cv, verbose=3)
+                                                search = GridSearchCV(
+                                                    pred_pipe,
+                                                    param_grid=search_space,
+                                                    cv=cv,
+                                                    verbose=3,
+                                                )
                                                 search.fit(X=X, y=y)
-                                                pred_pipe = pred_pipe.set_params(**search.best_params_)
+                                                pred_pipe = pred_pipe.set_params(
+                                                    **search.best_params_
+                                                )
 
                                                 X_train = X.iloc[train]
                                                 y_train = y[train]
@@ -325,7 +338,7 @@ if __name__ == "__main__":
                                                     sensitivity_score(
                                                         y_test,
                                                         pred_pipe.predict(X_test),
-                                                        pos_label="Stress"
+                                                        pos_label="Stress",
                                                     )
                                                 )
                                                 specificity_scores.append(
@@ -344,9 +357,13 @@ if __name__ == "__main__":
                                             std_recall = np.std(recall_scores)
                                             mean_precision = np.mean(precision_scores)
                                             std_precision = np.std(precision_scores)
-                                            mean_sensitivity = np.mean(sensitivity_scores)
+                                            mean_sensitivity = np.mean(
+                                                sensitivity_scores
+                                            )
                                             std_sensitivity = np.std(sensitivity_scores)
-                                            mean_specificity = np.mean(specificity_scores)
+                                            mean_specificity = np.mean(
+                                                specificity_scores
+                                            )
                                             std_specificity = np.std(specificity_scores)
                                         else:
                                             selected_signals = sig_names_train
@@ -354,7 +371,9 @@ if __name__ == "__main__":
                                                 "Task": selected_tasks,
                                                 "Signal": selected_signals,
                                             }
-                                            out = AudaceDataLoader(root=root_in_path).get_split_pred_df(
+                                            out = AudaceDataLoader(
+                                                root=root_in_path
+                                            ).get_split_pred_df(
                                                 selection_dict=selection_dict,
                                                 load_from_file=True,
                                                 save_file=False,
@@ -372,11 +391,13 @@ if __name__ == "__main__":
                                                 "Signal": selected_signals,
                                                 "Method": selected_methods,
                                             }
-                                            out = P5_StressDataLoader().get_split_pred_df(
-                                                selection_dict=selection_dict,
-                                                load_from_file=True,
-                                                save_file=False,
-                                                rel_values=rel_values,
+                                            out = (
+                                                P5_StressDataLoader().get_split_pred_df(
+                                                    selection_dict=selection_dict,
+                                                    load_from_file=True,
+                                                    save_file=False,
+                                                    rel_values=rel_values,
+                                                )
                                             )
 
                                             X_test = out["X"]
@@ -390,43 +411,45 @@ if __name__ == "__main__":
                                             )
                                             pred_pipe.fit(X_train, y_train)
                                             y_pred = pred_pipe.predict(X_test)
-                                            mean_accuracy = accuracy_score(y_test, y_pred)
+                                            mean_accuracy = accuracy_score(
+                                                y_test, y_pred
+                                            )
                                             std_accuracy = 0
                                         accuracy_perc_str = (
-                                                str(np.round(mean_accuracy * 100, 1))
-                                                + " ± "
-                                                + str(np.round(std_accuracy * 100, 1))
-                                                + " %"
+                                            str(np.round(mean_accuracy * 100, 1))
+                                            + " ± "
+                                            + str(np.round(std_accuracy * 100, 1))
+                                            + " %"
                                         )
                                         f1_perc_str = (
-                                                str(np.round(mean_f1 * 100, 1))
-                                                + " ± "
-                                                + str(np.round(std_f1 * 100, 1))
-                                                + " %"
+                                            str(np.round(mean_f1 * 100, 1))
+                                            + " ± "
+                                            + str(np.round(std_f1 * 100, 1))
+                                            + " %"
                                         )
                                         recall_perc_str = (
-                                                str(np.round(mean_recall * 100, 1))
-                                                + " ± "
-                                                + str(np.round(std_recall * 100, 1))
-                                                + " %"
+                                            str(np.round(mean_recall * 100, 1))
+                                            + " ± "
+                                            + str(np.round(std_recall * 100, 1))
+                                            + " %"
                                         )
                                         precision_perc_str = (
-                                                str(np.round(mean_precision * 100, 1))
-                                                + " ± "
-                                                + str(np.round(std_precision * 100, 1))
-                                                + " %"
+                                            str(np.round(mean_precision * 100, 1))
+                                            + " ± "
+                                            + str(np.round(std_precision * 100, 1))
+                                            + " %"
                                         )
                                         sensitivity_perc_str = (
-                                                str(np.round(mean_sensitivity * 100, 1))
-                                                + " ± "
-                                                + str(np.round(std_sensitivity * 100, 1))
-                                                + " %"
+                                            str(np.round(mean_sensitivity * 100, 1))
+                                            + " ± "
+                                            + str(np.round(std_sensitivity * 100, 1))
+                                            + " %"
                                         )
                                         specificity_perc_str = (
-                                                str(np.round(mean_specificity * 100, 1))
-                                                + " ± "
-                                                + str(np.round(std_specificity * 100, 1))
-                                                + " %"
+                                            str(np.round(mean_specificity * 100, 1))
+                                            + " ± "
+                                            + str(np.round(std_specificity * 100, 1))
+                                            + " %"
                                         )
                                         res_dict = {
                                             "Evaluation strategy": evaluation_labels[
@@ -435,11 +458,11 @@ if __name__ == "__main__":
                                             "Task train": train_task_label,
                                             "Task val": val_task_label,
                                             "Signal train": sig_name_train
-                                                            + ": "
-                                                            + method_name_dict[sig_names_train[0]],
+                                            + ": "
+                                            + method_name_dict[sig_names_train[0]],
                                             "Signal val": sig_name_val
-                                                          + ": "
-                                                          + method_name_dict[sig_name_val],
+                                            + ": "
+                                            + method_name_dict[sig_name_val],
                                             "Model": est,
                                             "Features": selected_features,
                                             "Baselined": baseline_label,

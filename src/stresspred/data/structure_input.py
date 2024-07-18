@@ -23,8 +23,7 @@ def signal_to_feat_df(
         "SubSegIdx",
         "Method",
     ]
-    info_columns = [
-        col for col in in_df.columns if col in possible_info_columns]
+    info_columns = [col for col in in_df.columns if col in possible_info_columns]
     array_columns = ["Ibi", "IbiTime"]
     out_df = in_df.groupby(info_columns).apply(
         lambda x: feat_func(
@@ -136,13 +135,11 @@ def norm_df(abs_feat_df, base_feat_df):
         "SubSegIdx",
         "Method",
     ]
-    info_columns = [
-        col for col in abs_feat_df.columns if col in possible_info_columns]
+    info_columns = [col for col in abs_feat_df.columns if col in possible_info_columns]
     intersect_columns = list(
         set(abs_feat_df.columns).intersection(set(base_feat_df.columns))
     )
-    feat_columns = [
-        col for col in intersect_columns if col not in info_columns]
+    feat_columns = [col for col in intersect_columns if col not in info_columns]
     gb_abs = abs_feat_df.groupby(group_columns)
     keys_abs = [key for key, _ in gb_abs]
     parameters = []
@@ -152,9 +149,11 @@ def norm_df(abs_feat_df, base_feat_df):
     for parameter in parameters:
         query = " and ".join(
             [
-                "{0}=='{1}'".format(x[0], x[1])
-                if type(x[1]) == str
-                else "{0}=={1}".format(x[0], x[1])
+                (
+                    "{0}=='{1}'".format(x[0], x[1])
+                    if type(x[1]) == str
+                    else "{0}=={1}".format(x[0], x[1])
+                )
                 for x in parameter
             ]
         )
@@ -196,8 +195,7 @@ def aug_df_with_error(
 
 def prep_df_for_class(in_df, dropna=True, inf_is_missing=True, selected_features=None):
 
-    info_columns = ["Signal", "Participant",
-                    "Task", "Rest", "SubSegIdx", "Method"]
+    info_columns = ["Signal", "Participant", "Task", "Rest", "SubSegIdx", "Method"]
     y_column = "Rest"
     sub_column = "Participant"
     task_column = "Task"
@@ -212,8 +210,7 @@ def prep_df_for_class(in_df, dropna=True, inf_is_missing=True, selected_features
         class_df = class_df.replace([np.inf, -np.inf], np.nan)
     if dropna:
         class_df = class_df.dropna(axis=1)
-    X_data = class_df[class_df.columns[~class_df.columns.isin(
-        info_columns)]].copy()
+    X_data = class_df[class_df.columns[~class_df.columns.isin(info_columns)]].copy()
     if selected_features is not None:
         missing_features = [
             col for col in selected_features if col not in X_data.columns
@@ -225,10 +222,7 @@ def prep_df_for_class(in_df, dropna=True, inf_is_missing=True, selected_features
     y_data = class_df.loc[:, class_df.columns == y_column].values.ravel()
     sub_data = class_df.loc[:, class_df.columns == sub_column].values.ravel()
     task_data = class_df.loc[:, class_df.columns == task_column].values.ravel()
-    signal_data = class_df.loc[:, class_df.columns ==
-                               signal_column].values.ravel()
-    method_data = class_df.loc[:, class_df.columns ==
-                               method_column].values.ravel()
-    subseg_data = class_df.loc[:, class_df.columns ==
-                               subseg_column].values.ravel()
+    signal_data = class_df.loc[:, class_df.columns == signal_column].values.ravel()
+    method_data = class_df.loc[:, class_df.columns == method_column].values.ravel()
+    subseg_data = class_df.loc[:, class_df.columns == subseg_column].values.ravel()
     return X_data, y_data, sub_data, task_data, signal_data, method_data, subseg_data

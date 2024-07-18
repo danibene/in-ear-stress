@@ -7,14 +7,18 @@ from stresspred.preprocess.preprocess_utils import peak_time_to_rri
 
 
 def stress_feat_extract(
-    rri, rri_time, data_format="rri", check_successive=True, expected_columns=[],
+    rri,
+    rri_time,
+    data_format="rri",
+    check_successive=True,
+    expected_columns=[],
 ):
     out_dfs = []
     if check_successive:
         rri_info = {"RRI": rri, "RRI_Time": rri_time}
     else:
         rri_info = {"RRI": rri}
-    
+
     try:
         out_dfs.append(nk.hrv_time(rri_info))
     except:
@@ -28,20 +32,21 @@ def stress_feat_extract(
     except:
         pass
     try:
-        out_dfs.append(my_stress_feat(
-            rri=rri, rri_time=rri_time, check_successive=check_successive
-        ))
+        out_dfs.append(
+            my_stress_feat(
+                rri=rri, rri_time=rri_time, check_successive=check_successive
+            )
+        )
     except:
         pass
-    
+
     if len(out_dfs) < 1:
         out = pd.DataFrame()
     else:
         out = pd.concat(out_dfs, axis=1)
 
     if len(expected_columns) > len(out.columns):
-        cols_to_add = [
-            col for col in expected_columns if col not in out.columns]
+        cols_to_add = [col for col in expected_columns if col not in out.columns]
         for col in cols_to_add:
             out[col] = np.nan
     return out
@@ -88,8 +93,7 @@ def my_stress_feat(rri, rri_time=None, check_successive=True):
             for i in range(n_windows):
                 start = i * window_size
                 start_idx = np.where(rri_time_ms_ref_start >= start)[0][0]
-                end_idx = np.where(rri_time_ms_ref_start <
-                                   start + window_size)[0][-1]
+                end_idx = np.where(rri_time_ms_ref_start < start + window_size)[0][-1]
                 med_rri.append(np.nanmedian(rri[start_idx:end_idx]))
             out["MADM" + str(window)] = np.nanmedian(
                 np.abs(med_rri - np.nanmedian(med_rri))
@@ -110,11 +114,9 @@ def my_stress_feat(rri, rri_time=None, check_successive=True):
             for i in range(n_windows):
                 start = i * window_size
                 start_idx = np.where(rri_time_ms_ref_start >= start)[0][0]
-                end_idx = np.where(rri_time_ms_ref_start <
-                                   start + window_size)[0][-1]
+                end_idx = np.where(rri_time_ms_ref_start < start + window_size)[0][-1]
                 sel_rri = rri[start_idx:end_idx]
-                mad_rri.append(np.nanmedian(
-                    np.abs(sel_rri - np.nanmedian(sel_rri))))
+                mad_rri.append(np.nanmedian(np.abs(sel_rri - np.nanmedian(sel_rri))))
             out["MMAD" + str(window)] = np.nanmedian(mad_rri)
 
     out = pd.DataFrame.from_dict(out, orient="index").T.add_prefix("MY_")
@@ -126,8 +128,7 @@ def get_expected_columns_hrv(func=stress_feat_extract, duration=180):
     signals, info = nk.ecg_process(ecg)
     ecg = nk.ecg_simulate(duration=duration)
     _, info = nk.ecg_process(ecg)
-    rri, rri_time = peak_time_to_rri(
-        info["ECG_R_Peaks"] / info["sampling_rate"])
+    rri, rri_time = peak_time_to_rri(info["ECG_R_Peaks"] / info["sampling_rate"])
     out = func(rri, rri_time)
     return list(out.columns)
 
