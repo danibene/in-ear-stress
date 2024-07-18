@@ -13,7 +13,7 @@ from stresspred import (
     make_prediction_pipeline,
     code_paths,
 )
-
+root_out_path = Path(code_paths["repo_path"], "local_data/outputs")
 feat_in_table = pd.read_csv(Path(code_paths["repo_path"], "local_data/neurokit2_hrv_feat_info.csv"))
 feats_in_paper = set(feat_in_table["Feature"])
 feature_list_path = Path(code_paths["repo_path"],"expected_features.json")
@@ -102,16 +102,18 @@ std = coef_df.groupby(["Feature"])["Abs Coef"].std().reset_index()
 summary = summary.merge(std, on="Feature", suffixes=(" mean", " std"))
 
 # Plot coefficients for all features
-fig, ax = plt.subplots(figsize=(15, 10))
+fig, ax = plt.subplots(figsize=(15, 8))
 # Create boxplot
-sns.boxplot(x="Feature", y="Coefficient", hue="Signal train", data=iem_and_ecg_coef_df, ax=ax, order=order)
+sns.boxplot(x="Feature", y="Coefficient", hue="Signal train", data=iem_and_ecg_coef_df, ax=ax, order=order, palette="Set3")
 # Rotate x-axis labels
 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 # Remove "HRV_" from x-axis labels
 ax.set_xticklabels([str(x).split("HRV_")[1].split("'")[0] for x in ax.get_xticklabels()])
 # Add title
-ax.set_title("Coefficients for all features")
+#ax.set_title("Coefficients for all features")
+plt.tight_layout()
 plt.show()
+
 
 
 # Then add the 75th percentile coefficient
@@ -130,15 +132,37 @@ summary[["Feature", "Abs Coef mean", "Abs Coef std", "Category", "Coef 75th perc
 # select top features by mean absolute coefficient
 top_features = summary["Feature"].values[:4]
 
-abs_df, _ = AudaceDataLoader().get_feat_dfs(save_file=True)
+iem_and_ecg_coef_df = iem_and_ecg_coef_df[iem_and_ecg_coef_df["Feature"].isin(top_features)]
 
-gt_record = abs_df[abs_df["Signal"]=="ECG"]
-record = abs_df[abs_df["Signal"]=="IEML"]
+# Plot coefficients for top 4 features
+fig, ax = plt.subplots(figsize=(5, 4))
+# Create boxplot
+sns.boxplot(x="Feature", y="Coefficient", hue="Signal train", data=iem_and_ecg_coef_df, ax=ax, order=top_features, palette="Set3")
+# Rotate x-axis labels
+ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+# Remove "HRV_" from x-axis labels
+ax.set_xticklabels([str(x).split("HRV_")[1].split("'")[0] for x in ax.get_xticklabels()])
+plt.tight_layout()
+plt.show()
+
+abs_df, _ = AudaceDataLoader().get_feat_dfs(save_file=True)
+# abs_df = pd.read_csv("local_data/abs_feat_df_20230411.csv")
+df_mental_cpt = abs_df[abs_df["Task"].isin(["MENTAL", "CPT"])]
+gt_record = df_mental_cpt[df_mental_cpt["Signal"]=="ECG"]
+record = df_mental_cpt[df_mental_cpt["Signal"]=="IEML"]
 
 # top_features = ["HRV_MedianNN", "HRV_RMSSD"]
 for hrv_col in top_features:
      
-    fig, axs = plt.subplots(nrows=1, ncols=2, sharex=True, sharey=True, squeeze=True, figsize=(15, 8))
+    fig, axs = plt.subplots(
+                nrows=1,
+                ncols=2,
+                sharex=True,
+                sharey=True,
+                squeeze=True,
+                figsize=(8, 4),
+                dpi=1000,
+            )
 
     dfs_list = []
 
@@ -148,8 +172,8 @@ for hrv_col in top_features:
         cond_ind_gt = np.where(np.array(gt_record["Rest"]) == cond)[0]
         df = pd.DataFrame(
             {
-                "Without missing": np.array(gt_record[hrv_col])[cond_ind_gt],
-                "With missing": np.array(record[hrv_col])[cond_ind],
+                "ECG": np.array(gt_record[hrv_col])[cond_ind_gt],
+                "IEM": np.array(record[hrv_col])[cond_ind],
             }
         )
         dfs_list.append(df)
@@ -160,17 +184,28 @@ for hrv_col in top_features:
     for i in range(len(dfs_list)):
         
         df = dfs_list[i]
-        data1 = df["Without missing"]
-        data2 = df["With missing"]
-        sm.graphics.mean_diff_plot(data1, data2, ax=axs[i])
+        data1 = df["ECG"]
+        data2 = df["IEM"]
+        sm.graphics.mean_diff_plot(data1, data2, ax=axs[i], scatter_kwds={"color": "#F79646", "alpha": 0.25})
         
         axs[i].set(
             xlabel="Mean of ECG and IEM",
             ylabel="Difference between ECG and IEM",
         )
         axs[i].set_title(label= conditions[i] + " conditions", fontsize=20)
+
+    # Increase x-axis and y-axis limits by adding 10% of the range to the left and right
+    PERCENTAGE = 0.1
+    for ax in axs:
+        ax.set_xlim([ax.get_xlim()[0] - PERCENTAGE * (ax.get_xlim()[1] - ax.get_xlim()[0]), ax.get_xlim()[1] + PERCENTAGE * (ax.get_xlim()[1] - ax.get_xlim()[0])])
+        ax.set_ylim([ax.get_ylim()[0] - PERCENTAGE * (ax.get_ylim()[1] - ax.get_ylim()[0]), ax.get_ylim()[1] + PERCENTAGE * (ax.get_ylim()[1] - ax.get_ylim()[0])])
     
     only_feature_name = hrv_col.split("HRV_")[1]
-    plt.suptitle(only_feature_name, fontsize=20)
-    plt.tight_layout()
+    plt.suptitle(only_feature_name, y=1.05, fontsize=20)
+
+    fig_name = "bland-altman_" + only_feature_name + "_IEM.png"
+    fig_path = Path(root_out_path, fig_name)
+    fig.savefig(
+        fig_path, facecolor="white", transparent=False, bbox_inches="tight"
+    )
     plt.show()
