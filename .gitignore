@@ -23,7 +23,20 @@
 .ipynb_checkpoints
 
 # Package files
+*.egg
+*.eggs/
+.installed.cfg
 *.egg-info
+
+# Unittest and coverage
+htmlcov/*
+.coverage
+.coverage.*
+.tox
+junit*.xml
+coverage.xml
+.pytest_cache/
+
 
 lib/CritiasStress/ECG-PPG/*
 lib/CritiasStress/LSL/*
