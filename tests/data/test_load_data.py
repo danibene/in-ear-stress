@@ -42,7 +42,7 @@ class TestStressBioDataLoader:
                             seg_df = pd.DataFrame.from_dict(seg_dict)
                             seg_dfs.append(seg_df)
 
-        ibi_df = pd.merge(seg_dfs)
+        ibi_df = pd.concat(seg_dfs)
         return ibi_df
 
     def test_get_base_feat_df(self):
