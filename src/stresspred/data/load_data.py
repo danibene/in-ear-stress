@@ -370,10 +370,26 @@ class StressBioDataLoader(BioDataLoader):
         if os.path.exists(self.paths["rel_feat_df"]) and load_from_file:
             self.rel_feat_df = pd.read_csv(self.paths["rel_feat_df"])
         else:
+            if self.base_feat_df is None:
+                self.get_base_feat_df(
+                    load_from_file=load_from_file, save_file=save_file, in_data=in_data
+                )
             self.rel_feat_df = norm_df(self.abs_feat_df, self.base_feat_df)
             if save_file:
                 self.rel_feat_df.to_csv(self.paths["rel_feat_df"], index=False)
         return self.rel_feat_df
+    
+    def get_base_feat_df(self, load_from_file=True, save_file=False, in_data=None, expected_columns=[]):
+        ibi_df = self.get_ibi_df(
+        load_from_file=load_from_file, save_file=save_file, in_data=in_data)
+        # create DataFrame with baseline segments for each task
+        # for this dataset it is from the rest data
+        base_ibi_df = create_base_df(ibi_df)
+        self.base_feat_df = signal_to_feat_df(
+            base_ibi_df, expected_columns=expected_columns
+        )
+        return self.base_feat_df
+
 
     def get_pred_df(
         self,
