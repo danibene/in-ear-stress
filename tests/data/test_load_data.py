@@ -1,5 +1,5 @@
-import pandas as pd
 import neurokit2 as nk
+import pandas as pd
 from tempbeat.extraction.interval_conversion import peak_time_to_rri
 
 from stresspred.data.load_data import StressBioDataLoader
@@ -46,6 +46,7 @@ class TestStressBioDataLoader:
 
     def test_get_base_feat_df(self):
         ibi_df = self.create_ibi_df()
+        assert "Rest" in ibi_df["Rest"].unique()
         data_loader = StressBioDataLoader()
         data_loader.get_base_feat_df(
             load_from_file=False, in_data=ibi_df, save_file=False
