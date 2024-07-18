@@ -40,4 +40,4 @@ class TestStressBioDataLoader:
     def test_get_base_feat_df(self):
         ibi_df = self.create_ibi_df()
         data_loader = StressBioDataLoader()
-        data_loader.get_base_feat_df(load_from_file=False, in_data=ibi_df, save_data=False)
+        data_loader.get_base_feat_df(load_from_file=False, in_data=ibi_df, save_file=False)
