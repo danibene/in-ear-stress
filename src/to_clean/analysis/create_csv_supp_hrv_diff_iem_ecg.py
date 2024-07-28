@@ -53,7 +53,7 @@ if __name__ == "__main__":
     )
     base_cond = "Without baselining"
 
-    list_sig_name_train = ["ECG", "IEML"]
+    list_sig_name_train = ["ECG", "IEML"]  # , "ECG-IEMLe"]
     root_in_path = args.root_in_path
     loader = AudaceDataLoader(root=root_in_path)
     selection_dict = {
@@ -61,6 +61,7 @@ if __name__ == "__main__":
         "Signal": selected_signals,
     }
     selected_features = "All Neurokit2 features"
+    # selected_features = ["HRV_HFD"]# ["HRV_HFD", "HRV_Prc20NN", "HRV_MinNN", "HRV_RCMSEn", "HRV_LF"]
     rel_values = base_cond == "With baselining"
 
     out = loader.get_split_pred_df(
@@ -71,8 +72,8 @@ if __name__ == "__main__":
         rel_values=rel_values,
     )
     est = "Log. Reg."
-    sig_name_val = "IEML"
     for sig_name_train in list_sig_name_train:
+        sig_name_val = sig_name_train
         sig_names_train = sig_name_train.split(" + ")
         pred_pipe = make_prediction_pipeline(est=est)
         all_sig_names = np.concatenate(
@@ -115,9 +116,7 @@ if __name__ == "__main__":
         accuracy_scores = []
         coefs = []
         for train, test in outer_cv:
-            print(np.unique(signal[train]))
             X_train = X.iloc[train]
-            print(len(X_train.columns))
             y_train = y[train]
 
             pred_pipe.fit(X_train, y_train)
@@ -145,6 +144,11 @@ if __name__ == "__main__":
     coef_df = pd.concat(coef_dfs)
 
     iem_and_ecg_coef_df = coef_df.copy(deep=False)
+    # Rename IEML to IEM
+    # Rename the "Signal train" column to "Signal"
+    iem_and_ecg_coef_df["Signal"] = iem_and_ecg_coef_df["Signal train"].str.replace(
+        "IEML", "IEM"
+    )
     coef_df = coef_df[coef_df["Signal train"] == "IEML"]
 
     coef_df["Abs Coef"] = np.abs(coef_df["Coefficient"])
@@ -168,7 +172,7 @@ if __name__ == "__main__":
     sns.boxplot(
         x="Feature",
         y="Coefficient",
-        hue="Signal train",
+        hue="Signal",
         data=iem_and_ecg_coef_df,
         ax=ax,
         order=order,
@@ -233,7 +237,7 @@ if __name__ == "__main__":
     sns.boxplot(
         x="Feature",
         y="Coefficient",
-        hue="Signal train",
+        hue="Signal",
         data=iem_and_ecg_coef_df,
         ax=ax,
         order=top_features,

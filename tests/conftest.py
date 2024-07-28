@@ -15,17 +15,6 @@ import pytest
 from tempbeat.extraction.interval_conversion import peak_time_to_rri
 
 
-class Helpers:
-    @staticmethod
-    def help_do_things():
-        pass
-
-
-@pytest.fixture
-def helpers():
-    return Helpers
-
-
 def create_ibi_df():
     """
     Creates a DataFrame containing Inter-Beat Intervals (IBIs).
