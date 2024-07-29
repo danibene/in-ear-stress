@@ -36,7 +36,9 @@ def get_ibi_df():
             - "IbiTime" (float): The time of the Inter-Beat Interval in seconds.
     """
     file_path = get_resource_path("ibi_df.csv")
-    if not file_path.is_file():
+    if not isinstance(file_path, Path):
+        file_path = IBI_DF_LINK
+    elif file_path.is_file():
         file_path = IBI_DF_LINK
     return pd.read_csv(file_path)
 
