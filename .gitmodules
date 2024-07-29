@@ -1,0 +1,3 @@
+[submodule "lib/audace_load_segment_extract_hrv_v20220210"]
+	path = lib/audace_load_segment_extract_hrv_v20220210
+	url = https://gitlab.critias.ca/critias_projects/ms/ms_danielle_benesch/audace_load_segment_extract_hrv_v20220210.git
