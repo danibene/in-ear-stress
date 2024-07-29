@@ -14,6 +14,8 @@ import pytest
 
 from test_resources.load_resources import get_resource_path
 
+IBI_DF_LINK = "https://raw.githubusercontent.com/danibene/in-ear-stress/5400e91cc1fe896fd43c98bf5e353a5a9493028e/src/test_resources/ibi_df.csv"  # noqa
+
 
 def get_ibi_df():
     """
@@ -34,6 +36,8 @@ def get_ibi_df():
             - "IbiTime" (float): The time of the Inter-Beat Interval in seconds.
     """
     file_path = get_resource_path("ibi_df.csv")
+    if not file_path.is_file():
+        file_path = IBI_DF_LINK
     return pd.read_csv(file_path)
 
 
