@@ -1,4 +1,5 @@
 *.asv
+*.csv
 *.flac
 *.xlsx
 *.wav
